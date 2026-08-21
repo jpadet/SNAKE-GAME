@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cyber Academy Snake Validation</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #07111f;
+      --panel: rgba(15, 27, 48, 0.92);
+      --panel-strong: #12213a;
+      --accent: #32e6a6;
+      --accent-2: #39a9ff;
+      --danger: #ff5470;
+      --warning: #ffd166;
+      --text: #edf7ff;
+      --muted: #a7b7c9;
+      --grid: rgba(255, 255, 255, 0.045);
+      --shadow: 0 22px 70px rgba(0, 0, 0, 0.35);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(50, 230, 166, 0.15), transparent 30%),
+        radial-gradient(circle at 80% 10%, rgba(57, 169, 255, 0.18), transparent 26%),
+        linear-gradient(135deg, #030712 0%, var(--bg) 52%, #10182f 100%);
+      color: var(--text);
+      padding: 24px;
+    }
+
+    .app {
+      width: min(1100px, 100%);
+      display: grid;
+      grid-template-columns: minmax(320px, 640px) minmax(280px, 1fr);
+      gap: 24px;
+      align-items: stretch;
+    }
+
+    .game-card,
+    .side-card {
+      background: var(--panel);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .game-card { padding: 18px; }
+    .side-card { padding: 24px; }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+
+    h1 {
+      font-size: clamp(1.5rem, 4vw, 2.4rem);
+      margin: 0;
+      letter-spacing: -0.04em;
+      line-height: 1;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(50, 230, 166, 0.12);
+      border: 1px solid rgba(50, 230, 166, 0.32);
+      color: #adffe4;
+      font-weight: 700;
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    canvas {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      display: block;
+      border-radius: 18px;
+      background-color: #081221;
+      background-image:
+        linear-gradient(var(--grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+      background-size: 25px 25px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .stat {
+      background: rgba(255, 255, 255, 0.055);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: 14px;
+      padding: 12px;
+      min-height: 76px;
+    }
+
+    .stat span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.78rem;
+      margin-bottom: 5px;
+    }
+
+    .stat strong { font-size: 1.35rem; }
+
+    p { color: var(--muted); line-height: 1.6; }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin: 20px 0;
+    }
+
+    button {
+      border: 0;
+      border-radius: 14px;
+      padding: 12px 16px;
+      font-weight: 800;
+      cursor: pointer;
+      color: #02140e;
+      background: linear-gradient(135deg, var(--accent), #82ffd2);
+      box-shadow: 0 10px 28px rgba(50, 230, 166, 0.18);
+      transition: transform 0.15s ease, filter 0.15s ease;
+    }
+
+    button:hover { transform: translateY(-1px); filter: brightness(1.05); }
+    button:active { transform: translateY(1px); }
+    button.secondary { background: #263852; color: var(--text); box-shadow: none; }
+    button.choice {
+      width: 100%;
+      text-align: left;
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.11);
+      box-shadow: none;
+      margin-top: 10px;
+    }
+    button.choice:hover { border-color: rgba(50, 230, 166, 0.55); }
+
+    .hint {
+      background: rgba(57, 169, 255, 0.12);
+      border: 1px solid rgba(57, 169, 255, 0.24);
+      border-radius: 18px;
+      padding: 14px;
+      color: #d9efff;
+      font-size: 0.95rem;
+    }
+
+    .domain-list {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .domain-list div {
+      border-radius: 14px;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.055);
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      display: none;
+      place-items: center;
+      padding: 18px;
+      background: rgba(1, 7, 17, 0.76);
+      backdrop-filter: blur(10px);
+      z-index: 10;
+    }
+
+    .overlay.show { display: grid; }
+
+    .modal {
+      width: min(640px, 100%);
+      background: var(--panel-strong);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 24px;
+      padding: 26px;
+      box-shadow: var(--shadow);
+    }
+
+    .modal h2 { margin: 0 0 10px; }
+    .modal .domain { color: var(--accent); font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.8rem; }
+    .feedback { min-height: 28px; margin-top: 12px; font-weight: 800; }
+    .correct { color: var(--accent); }
+    .wrong { color: var(--danger); }
+    .result { text-align: center; }
+    .result .score { font-size: clamp(3rem, 12vw, 5.5rem); margin: 0; color: var(--accent); }
+    .validated { color: var(--accent); }
+    .not-validated { color: var(--warning); }
+
+    @media (max-width: 900px) {
+      .app { grid-template-columns: 1fr; }
+      .stats { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="game-card" aria-label="Snake game area">
+      <div class="topbar">
+        <h1>Cyber Snake</h1>
+        <span class="badge">10-question validation run</span>
+      </div>
+      <canvas id="board" width="600" height="600" aria-label="Snake game board"></canvas>
+      <div class="stats" aria-live="polite">
+        <div class="stat"><span>Blocks eaten</span><strong id="eaten">0</strong>/10</div>
+        <div class="stat"><span>Correct</span><strong id="correct">0</strong>/10</div>
+        <div class="stat"><span>Question</span><strong id="questionCount">0</strong>/10</div>
+        <div class="stat"><span>Status</span><strong id="status">Ready</strong></div>
+      </div>
+    </section>
+
+    <aside class="side-card">
+      <h2>Academy validation game</h2>
+      <p>Guide the snake to the glowing blocks. Every block pauses the game and launches a cybersecurity check. Answer all 10 randomly selected questions to finish the run.</p>
+      <div class="controls">
+        <button id="startBtn">Start game</button>
+        <button id="resetBtn" class="secondary">Reset run</button>
+      </div>
+      <div class="hint"><strong>Controls:</strong> Arrow keys or WASD. On touch screens, swipe on the board. Avoid walls and your own tail.</div>
+      <div class="domain-list" aria-label="Question domains">
+        <div>IAM</div><div>GRC</div><div>SOC</div><div>AI Security</div>
+      </div>
+    </aside>
+  </main>
+
+  <section id="questionOverlay" class="overlay" role="dialog" aria-modal="true" aria-labelledby="questionTitle">
+    <div class="modal">
+      <div id="questionDomain" class="domain"></div>
+      <h2 id="questionTitle">Cybersecurity question</h2>
+      <p id="questionText"></p>
+      <div id="choices"></div>
+      <div id="feedback" class="feedback" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <section id="resultOverlay" class="overlay" role="dialog" aria-modal="true" aria-labelledby="resultTitle">
+    <div class="modal result">
+      <h2 id="resultTitle">Validation complete</h2>
+      <p class="score"><span id="finalScore">0</span>/10</p>
+      <h2 id="validationMessage"></h2>
+      <p id="resultCopy"></p>
+      <button id="playAgainBtn">Play another randomized run</button>
+    </div>
+  </section>
+
+  <script>
+    const questionBank = [
+      { domain: 'IAM', q: 'What is the primary purpose of multi-factor authentication?', choices: ['To make passwords longer automatically', 'To use two passwords for the same account', 'To require independent proof factors before granting access'], correct: 2 },
+      { domain: 'IAM', q: 'Which principle grants users only the access needed for their role?', choices: ['Open access', 'Need-to-know sharing without reviews', 'Least privilege'], correct: 2 },
+      { domain: 'IAM', q: 'What should happen when an employee leaves the organization?', choices: ['Keep access active in case they return', 'Disable only their email account', 'Promptly revoke or disable all relevant access'], correct: 2 },
+      { domain: 'IAM', q: 'A privileged access management program mainly protects which accounts?', choices: ['Public customer accounts only', 'Accounts with elevated administrative rights', 'Accounts with weak profile pictures'], correct: 1 },
+      { domain: 'IAM', q: 'What is single sign-on designed to improve?', choices: ['Letting everyone share one password', 'Centralized authentication and user experience', 'Removing all authentication controls'], correct: 1 },
+      { domain: 'IAM', q: 'Which control best reduces stale access over time?', choices: ['Never changing permissions', 'Periodic access reviews and recertification', 'Adding every user to admin groups'], correct: 1 },
+      { domain: 'IAM', q: 'What does role-based access control map permissions to?', choices: ['Random device names', 'Job roles or business functions', 'The user who asks first'], correct: 1 },
+      { domain: 'GRC', q: 'What is the purpose of a risk register?', choices: ['To store office seating charts', 'To list only risks that are already solved', 'To track risks, owners, likelihood, impact, and treatment plans'], correct: 2 },
+      { domain: 'GRC', q: 'Which term describes evidence that a control operated as intended?', choices: ['A rumor', 'Audit evidence', 'A marketing claim'], correct: 1 },
+      { domain: 'GRC', q: 'What does compliance mean in cybersecurity?', choices: ['Ignoring legal obligations', 'Meeting applicable laws, regulations, standards, or policies', 'Buying the most expensive firewall'], correct: 1 },
+      { domain: 'GRC', q: 'What is the best first step when a new critical vendor is onboarded?', choices: ['Give full network access immediately', 'Assess vendor risk and security requirements', 'Skip contracts to move faster'], correct: 1 },
+      { domain: 'GRC', q: 'Which document typically defines acceptable employee technology use?', choices: ['Lunch menu', 'Acceptable use policy', 'Logo style guide'], correct: 1 },
+      { domain: 'GRC', q: 'What does risk treatment include?', choices: ['Accepting, mitigating, transferring, or avoiding risk', 'Naming the risk after a team member', 'Deleting the risk without approval'], correct: 0 },
+      { domain: 'GRC', q: 'Why should controls be mapped to frameworks such as NIST or ISO 27001?', choices: ['To make reports longer only', 'To align security practices with recognized requirements', 'To replace all technical testing'], correct: 1 },
+      { domain: 'SOC', q: 'What is the main function of a SIEM?', choices: ['Create employee badges', 'Collect, correlate, and alert on security events', 'Encrypt every file by default'], correct: 1 },
+      { domain: 'SOC', q: 'A phishing alert is confirmed malicious. What should the SOC do next?', choices: ['Delete the alert and move on', 'Contain affected accounts or devices and preserve evidence', 'Reply to the attacker'], correct: 1 },
+      { domain: 'SOC', q: 'What does triage mean in alert handling?', choices: ['Prioritizing and validating alerts for response', 'Closing all alerts automatically', 'Changing the company logo'], correct: 0 },
+      { domain: 'SOC', q: 'Which activity helps detect lateral movement?', choices: ['Monitoring unusual authentication and network patterns', 'Only checking printer ink levels', 'Disabling all logs'], correct: 0 },
+      { domain: 'SOC', q: 'What is an indicator of compromise?', choices: ['A cafeteria receipt', 'A security artifact such as a malicious IP, hash, or domain', 'Any software license key'], correct: 1 },
+      { domain: 'SOC', q: 'Why are playbooks useful during incidents?', choices: ['They remove the need for analysts', 'They provide repeatable response steps and decision points', 'They guarantee no incident will happen'], correct: 1 },
+      { domain: 'SOC', q: 'What is the value of centralized logging?', choices: ['It makes logs impossible to search', 'It supports correlation, investigation, and retention', 'It removes the need for backups'], correct: 1 },
+      { domain: 'SOC', q: 'What is containment in incident response?', choices: ['Limiting attacker impact and spread', 'Publishing every detail immediately', 'Turning off security monitoring'], correct: 0 },
+      { domain: 'AI Security', q: 'What is prompt injection?', choices: ['Making prompts visually colorful', 'An attempt to manipulate an AI system into ignoring instructions or revealing data', 'Compressing a prompt into a smaller font'], correct: 1 },
+      { domain: 'AI Security', q: 'Why should sensitive data be minimized in AI prompts?', choices: ['Because AI cannot process text', 'To reduce exposure, retention, and misuse risks', 'To make prompts less readable'], correct: 1 },
+      { domain: 'AI Security', q: 'What is model hallucination?', choices: ['A model producing confident but false or unsupported output', 'A model refusing every request', 'A model using a larger monitor'], correct: 0 },
+      { domain: 'AI Security', q: 'What does human-in-the-loop review help with?', choices: ['Replacing accountability', 'Validating high-risk AI output before action', 'Making AI slower for no reason'], correct: 1 },
+      { domain: 'AI Security', q: 'Which control helps protect retrieval-augmented generation systems?', choices: ['Allowing all documents for every user', 'Enforcing source access controls before retrieval', 'Turning citations off'], correct: 1 },
+      { domain: 'AI Security', q: 'What is adversarial testing for AI systems?', choices: ['Testing only with perfect inputs', 'Probing for unsafe, biased, or policy-violating behavior', 'Removing all logs'], correct: 1 },
+      { domain: 'AI Security', q: 'Why monitor AI application logs?', choices: ['To detect abuse, data leakage attempts, and unsafe outputs', 'To collect passwords from users', 'To avoid updating the system'], correct: 0 },
+      { domain: 'AI Security', q: 'What should an AI policy define?', choices: ['Only the chatbot name', 'Approved use cases, prohibited data, review requirements, and accountability', 'How to bypass security reviews'], correct: 1 }
+    ];
+
+    const canvas = document.getElementById('board');
+    const ctx = canvas.getContext('2d');
+    const startBtn = document.getElementById('startBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const playAgainBtn = document.getElementById('playAgainBtn');
+    const eatenEl = document.getElementById('eaten');
+    const correctEl = document.getElementById('correct');
+    const questionCountEl = document.getElementById('questionCount');
+    const statusEl = document.getElementById('status');
+    const questionOverlay = document.getElementById('questionOverlay');
+    const resultOverlay = document.getElementById('resultOverlay');
+    const questionDomain = document.getElementById('questionDomain');
+    const questionText = document.getElementById('questionText');
+    const choicesEl = document.getElementById('choices');
+    const feedbackEl = document.getElementById('feedback');
+    const finalScoreEl = document.getElementById('finalScore');
+    const validationMessage = document.getElementById('validationMessage');
+    const resultCopy = document.getElementById('resultCopy');
+
+    const tileCount = 24;
+    const tileSize = canvas.width / tileCount;
+    let snake, direction, nextDirection, food, timer, running, paused, selectedQuestions, currentQuestionIndex, correctAnswers, touchStart;
+
+    function shuffle(array) {
+      return [...array].sort(() => Math.random() - 0.5);
+    }
+
+    function resetGame() {
+      clearInterval(timer);
+      snake = [{ x: 10, y: 12 }, { x: 9, y: 12 }, { x: 8, y: 12 }];
+      direction = { x: 1, y: 0 };
+      nextDirection = { x: 1, y: 0 };
+      selectedQuestions = shuffle(questionBank).slice(0, 10);
+      currentQuestionIndex = 0;
+      correctAnswers = 0;
+      running = false;
+      paused = false;
+      questionOverlay.classList.remove('show');
+      resultOverlay.classList.remove('show');
+      placeFood();
+      updateStats('Ready');
+      draw();
+    }
+
+    function startGame() {
+      if (running) return;
+      running = true;
+      paused = false;
+      updateStats('Playing');
+      timer = setInterval(tick, 110);
+    }
+
+    function updateStats(status) {
+      eatenEl.textContent = currentQuestionIndex;
+      correctEl.textContent = correctAnswers;
+      questionCountEl.textContent = currentQuestionIndex;
+      statusEl.textContent = status;
+    }
+
+    function placeFood() {
+      do {
+        food = {
+          x: Math.floor(Math.random() * tileCount),
+          y: Math.floor(Math.random() * tileCount)
+        };
+      } while (snake.some(segment => segment.x === food.x && segment.y === food.y));
+    }
+
+    function tick() {
+      if (!running || paused) return;
+      direction = nextDirection;
+      const head = { x: snake[0].x + direction.x, y: snake[0].y + direction.y };
+
+      if (head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount || snake.some(segment => segment.x === head.x && segment.y === head.y)) {
+        endGame('Collision detected. Validation run ended early.');
+        return;
+      }
+
+      snake.unshift(head);
+      if (head.x === food.x && head.y === food.y) {
+        pauseForQuestion();
+      } else {
+        snake.pop();
+      }
+      draw();
+    }
+
+    function pauseForQuestion() {
+      paused = true;
+      updateStats('Question');
+      showQuestion(selectedQuestions[currentQuestionIndex]);
+    }
+
+    function showQuestion(question) {
+      questionDomain.textContent = question.domain;
+      questionText.textContent = question.q;
+      feedbackEl.textContent = '';
+      feedbackEl.className = 'feedback';
+      choicesEl.innerHTML = '';
+      question.choices.forEach((choice, index) => {
+        const button = document.createElement('button');
+        button.className = 'choice';
+        button.textContent = choice;
+        button.addEventListener('click', () => answerQuestion(index, question.correct));
+        choicesEl.appendChild(button);
+      });
+      questionOverlay.classList.add('show');
+    }
+
+    function answerQuestion(choiceIndex, correctIndex) {
+      const buttons = choicesEl.querySelectorAll('button');
+      buttons.forEach(button => button.disabled = true);
+      const isCorrect = choiceIndex === correctIndex;
+      if (isCorrect) correctAnswers += 1;
+      feedbackEl.textContent = isCorrect ? 'Correct. Control knowledge confirmed.' : 'Not quite. Review this control area after the run.';
+      feedbackEl.className = `feedback ${isCorrect ? 'correct' : 'wrong'}`;
+      currentQuestionIndex += 1;
+      updateStats('Resuming');
+
+      setTimeout(() => {
+        questionOverlay.classList.remove('show');
+        if (currentQuestionIndex >= 10) {
+          endGame('Validation complete.');
+        } else {
+          placeFood();
+          paused = false;
+          updateStats('Playing');
+        }
+      }, 900);
+    }
+
+    function endGame(status) {
+      clearInterval(timer);
+      running = false;
+      paused = false;
+      updateStats(status);
+      finalScoreEl.textContent = correctAnswers;
+      if (correctAnswers > 8) {
+        validationMessage.textContent = 'Skills validated';
+        validationMessage.className = 'validated';
+        resultCopy.textContent = 'Excellent outcome: the learner demonstrated strong cybersecurity readiness across IAM, GRC, SOC, and AI security.';
+      } else {
+        validationMessage.textContent = 'Keep practicing';
+        validationMessage.className = 'not-validated';
+        resultCopy.textContent = 'Use the missed domains as coaching prompts, then replay with a fresh random set of questions.';
+      }
+      resultOverlay.classList.add('show');
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawFood();
+      drawSnake();
+    }
+
+    function drawSnake() {
+      snake.forEach((segment, index) => {
+        const gradient = ctx.createLinearGradient(segment.x * tileSize, segment.y * tileSize, (segment.x + 1) * tileSize, (segment.y + 1) * tileSize);
+        gradient.addColorStop(0, index === 0 ? '#82ffd2' : '#32e6a6');
+        gradient.addColorStop(1, index === 0 ? '#39a9ff' : '#0bbf89');
+        ctx.fillStyle = gradient;
+        roundRect(segment.x * tileSize + 2, segment.y * tileSize + 2, tileSize - 4, tileSize - 4, 7);
+      });
+    }
+
+    function drawFood() {
+      const centerX = food.x * tileSize + tileSize / 2;
+      const centerY = food.y * tileSize + tileSize / 2;
+      ctx.shadowColor = '#ffd166';
+      ctx.shadowBlur = 18;
+      ctx.fillStyle = '#ffd166';
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, tileSize * 0.34, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = '#ff5470';
+      ctx.fillRect(centerX - 4, centerY - 4, 8, 8);
+    }
+
+    function roundRect(x, y, width, height, radius) {
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.arcTo(x + width, y, x + width, y + height, radius);
+      ctx.arcTo(x + width, y + height, x, y + height, radius);
+      ctx.arcTo(x, y + height, x, y, radius);
+      ctx.arcTo(x, y, x + width, y, radius);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    function setDirection(x, y) {
+      if (direction.x + x === 0 && direction.y + y === 0) return;
+      nextDirection = { x, y };
+    }
+
+    document.addEventListener('keydown', event => {
+      const keyMap = {
+        ArrowUp: [0, -1], w: [0, -1], W: [0, -1],
+        ArrowDown: [0, 1], s: [0, 1], S: [0, 1],
+        ArrowLeft: [-1, 0], a: [-1, 0], A: [-1, 0],
+        ArrowRight: [1, 0], d: [1, 0], D: [1, 0]
+      };
+      if (keyMap[event.key]) {
+        event.preventDefault();
+        setDirection(...keyMap[event.key]);
+      }
+    });
+
+    canvas.addEventListener('touchstart', event => {
+      touchStart = event.touches[0];
+    }, { passive: true });
+
+    canvas.addEventListener('touchmove', event => {
+      if (!touchStart) return;
+      const touch = event.touches[0];
+      const dx = touch.clientX - touchStart.clientX;
+      const dy = touch.clientY - touchStart.clientY;
+      if (Math.max(Math.abs(dx), Math.abs(dy)) < 24) return;
+      if (Math.abs(dx) > Math.abs(dy)) setDirection(dx > 0 ? 1 : -1, 0);
+      else setDirection(0, dy > 0 ? 1 : -1);
+      touchStart = touch;
+      event.preventDefault();
+    }, { passive: false });
+
+    startBtn.addEventListener('click', startGame);
+    resetBtn.addEventListener('click', resetGame);
+    playAgainBtn.addEventListener('click', resetGame);
+
+    resetGame();
+  </script>
+</body>
+</html>
